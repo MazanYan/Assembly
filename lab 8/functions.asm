@@ -201,11 +201,14 @@ floatToDec:                         ; A float, result string
             cmp eax, 0
             pop eax
             je @plusInfinity
-            mov byte [ebx], '-'
-            @plusInfinity:
-            mov byte [ebx], '+'
+            @minusInfinity:
+                mov byte [ebx], '-'
                 mov dword [ebx + 1], '∞'
-            jmp @endConversion
+                jmp @endConversion
+            @plusInfinity:
+                mov byte [ebx], '+'
+                mov dword [ebx + 1], '∞'
+                jmp @endConversion
         @nan:
             mov byte [ebx], 'N'
             mov byte [ebx + 1], 'a'
