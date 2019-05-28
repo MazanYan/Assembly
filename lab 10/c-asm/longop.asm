@@ -1,11 +1,15 @@
 section .bss
     i : resd 1
     j : resd 1
+    partial_division : resb 1000
+    convert_residue : resb 1
+    less_than_ten : resd 1
 
 section .text
 global mulN_x_N
 global addLongop
 global subLongop
+global strDec
 
 addLongop:
     push ebp
@@ -88,11 +92,11 @@ mulN_x_N:                                   ; size, A, B, res
     push ebp
     mov ebp, esp
     
-    push esi
+    ;push esi
     push ebx
-    push edi
-    push ecx
-    push eax
+    ;push edi
+    ;push ecx
+    ;push eax
 
     mov esi, dword [ebp + 20]               ; size
     dec esi                                 ; Making pointer to point on start of
@@ -137,12 +141,122 @@ mulN_x_N:                                   ; size, A, B, res
         cmp eax, 0
         jge @outerCycle
 
-    pop eax
-    pop ecx
-    pop edi
-    pop ebx
     pop esi
+    ;pop eax
+    ;pop ecx
+    ;pop edi
+    pop ebx
+    ;pop esi
 
     leave
     ret					; add esp, 16
+
+div10:                              ; division by bits groups
+    push ebp
+    mov ebp, esp
+    
+    mov edx, dword [ebp + 20]       ; size
+    mov ebx, dword [ebp + 16]       ; divided number
+    mov edi, dword [ebp + 12]       ; partial result
+    mov ecx, dword [ebp + 8]        ; residue
+    
+    push ebx                        ; ebx (bl) serves as divisor
+    
+    mov esi, 0
+    and ax, 0xff
+    @division10Cycle:
+        pop ebx
+        mov al, byte [ebx + esi]
+        push ebx
+        mov bl, 10
+        div bl
+        mov byte [edi + esi], al
+        
+        inc esi
+        cmp esi, edx
+        jne @division10Cycle
+    pop ebx
+    mov dl, ah
+    mov byte [ecx], dl
+    leave 
+    ret					; add esp, 16
+
+strDec:
+    push ebp
+    mov ebp, esp
+    
+    push ebx
+    push eax
+
+    mov eax, dword [ebp + 16]           ; number
+    mov edi, dword [ebp + 12]           ; text buffer
+    mov ecx, dword [ebp + 8]            ; number size
+    
+    mov esi, 0
+    push esi
+    @convertCycle:
+	;push ecx
+        ;push dword [ebp + 16]
+        ;push partial_division
+        ;push convert_residue
+        ;call div10
+        ;add esp, 16
+        
+        mov edi, dword [ebp + 12]
+        mov dl, byte [convert_residue]
+        add dl, 48
+        
+        pop esi
+        mov byte [edi + esi], dl
+        inc esi
+        push esi
+        
+        mov dword [less_than_ten], 1	   ; dword [less_than_ten] == 1 => partial_division < 10
+        mov esi, dword [ebp + 8]
+        dec esi
+        cmp byte [partial_division + esi], 10
+        jge @greaterThanTen
+        
+        @swapCycle1:
+        mov dl, byte [partial_division + esi]
+        mov ebx, dword [ebp + 16]
+        mov byte [ebx + esi], dl
+        dec esi
+        @swapCycle:
+            mov dl, byte [partial_division + esi]
+            mov ebx, dword [ebp + 16]
+            mov byte [ebx + esi], dl
+            
+            cmp dl, 0
+            jz @zeroByte
+            mov dword [less_than_ten], 0
+            @zeroByte:
+                dec esi
+                cmp esi, 0
+                jge @swapCycle
+        
+        mov edi, dword [ebp + 12]           ; text buffer
+        mov ecx, dword [ebp + 8]            ; number size
+
+        cmp dword [less_than_ten], 0
+        jz @convertCycle
+        jmp @end
+        @greaterThanTen:
+            mov dword [less_than_ten], 0
+            jmp @swapCycle1
+        
+    @end:
+        ;mov esi, dword [ebp + 8]
+        ;dec esi
+        ;mov al, byte [partial_division + esi]
+
+        pop esi
+        ;add al, 48
+        ;mov byte [edi + esi], al
+        
+	pop eax
+	pop ebx
+
+        leave
+        ret						; add esp, 12
 

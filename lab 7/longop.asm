@@ -1,11 +1,11 @@
 section .bss
     partial_division : resb 1000
     convert_residue : resb 1
-    ;number_size : resb 1
     less_than_ten : resd 1
     
 section .text
 global Div10
+global StrDec
 
 Div10:                              ; division by bits groups
     push ebp
@@ -26,7 +26,6 @@ Div10:                              ; division by bits groups
         push ebx
         mov bl, 10
         div bl
-        ;mov cl, ah
         mov byte [edi + esi], al
         
         inc esi
@@ -34,9 +33,6 @@ Div10:                              ; division by bits groups
         jne @division10Cycle
     pop ebx
     mov dl, ah
-    ;pop ecx
-    ;mov byte [residue_buffer], dl
-    ;mov ecx, dword [ebp + 8]
     mov byte [ecx], dl
     leave 
     ret 16
@@ -44,7 +40,6 @@ Div10:                              ; division by bits groups
 StrDec:
     push ebp
     mov ebp, esp
-    ;sub esp, 16
     
     
     mov eax, dword [ebp + 16]           ; number
@@ -54,10 +49,6 @@ StrDec:
     mov esi, 0
     push esi
     @convertCycle:
-        ;push edi
-        ;push ecx
-        
-        ;mov ecx, dword [ebp + 8]
         push ecx
         push dword [ebp + 16]
         push partial_division
@@ -65,9 +56,6 @@ StrDec:
         call Div10
         
         
-        ;pop ecx
-        ;pop edi
-        ;mov ecx, dword [ebp + 8]
         mov edi, dword [ebp + 12]
         mov dl, byte [convert_residue]
         add dl, 48
@@ -88,7 +76,6 @@ StrDec:
         mov ebx, dword [ebp + 16]
         mov byte [ebx + esi], dl
         dec esi
-        ;jmp @end
         @swapCycle:
             mov dl, byte [partial_division + esi]
             mov ebx, dword [ebp + 16]
@@ -101,13 +88,6 @@ StrDec:
                 dec esi
                 cmp esi, 0
                 jge @swapCycle
-                
-        ;push ebp
-        ;push ecx     
-        ;PRINT_BYTES_HEX 3, partial_division
-        ;pop ecx
-        ;pop ebp
-        ;NEWLINE
         
         mov edi, dword [ebp + 12]           ; text buffer
         mov ecx, dword [ebp + 8]            ; number size
